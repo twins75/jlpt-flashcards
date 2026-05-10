@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="fr"><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="JLPT Cards">
+<title>JLPT Flashcards N5·N4·N3</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+  :root {
+    --bg: #0d0d0f;
+    --surface: #18181c;
+    --surface2: #222228;
+    --border: rgba(255,255,255,0.08);
+    --text: #f0eee8;
+    --text-muted: #7a7875;
+    --text-dim: #3a3835;
+    --accent: #e8c87a;
+    --accent-dim: rgba(232,200,122,0.12);
+    --green: #6bcf8f;
+    --green-dim: rgba(107,207,143,0.12);
+    --red: #f07575;
+    --red-dim: rgba(240,117,117,0.12);
+    --blue: #7ab0e8;
+    --blue-dim: rgba(122,176,232,0.12);
+    --n5: #6bcf8f;
+    --n4: #7ab0e8;
+    --n3: #e8c87a;
+    --radius: 16px;
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    overscroll-behavior: none;
+    overflow: hidden;
+  }
+
+  #app {
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+    max-width: 430px;
+    margin: 0 auto;
+    padding: env(safe-area-inset-top, 12px) 16px 0;
+  }
+
+  /* Header */
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 0 12px;
+  }
+  .logo {
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    color: var(--accent);
+  }
+  .logo span { color: var(--text-muted); font-weight: 300; }
+  .header-stats {
+    display: flex;
+    gap: 12px;
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+  .header-stats b { color: var(--text); font-weight: 500; }
+
+  /* Level tabs */
+  .level-tabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+  .lvl-btn {
+    flex: 1;
+    padding: 8px 0;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-muted);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .lvl-btn.active[data-lvl="all"] { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+  .lvl-btn.active[data-lvl="N5"] { background: var(--green-dim); border-color: var(--n5); color: var(--n5); }
+  .lvl-btn.active[data-lvl="N4"] { background: var(--blue-dim); border-color: var(--n4); color: var(--n4); }
+  .lvl-btn.active[data-lvl="N3"] { background: var(--accent-dim); border-color: var(--n3); color: var(--n3); }
+
+  /* Category select */
+  .cat-row {
+    margin-bottom: 10px;
+  }
+  .cat-select {
+    width: 100%;
+    padding: 9px 14px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-muted);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%237a7875' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+  }
+
+  /* Progress bar */
+  .progress-wrap {
+    height: 3px;
+    background: var(--surface2);
+    border-radius: 2px;
+    margin-bottom: 12px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 2px;
+    transition: width 0.4s ease;
+  }
+
+  /* Stats row */
+  .stats-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .stat-pill {
+    flex: 1;
+    padding: 8px 0;
+    border-radius: 10px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    text-align: center;
+  }
+  .stat-pill .num { font-size: 18px; font-weight: 600; display: block; }
+  .stat-pill .lbl { font-size: 10px; color: var(--text-muted); letter-spacing: 0.05em; text-transform: uppercase; }
+  .stat-pill.green .num { color: var(--green); }
+  .stat-pill.red .num { color: var(--red); }
+  .stat-pill.blue .num { color: var(--blue); }
+
+  /* Card area */
+  .card-area {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 0;
+    margin-bottom: 12px;
+  }
+  .card-wrap {
+    width: 100%;
+    max-height: 100%;
+    aspect-ratio: 3/2.2;
+    perspective: 1200px;
+    cursor: pointer;
+  }
+  .card-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transform-style: preserve-3d;
+    transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .card-inner.flipped { transform: rotateY(180deg); }
+  .card-face {
+    position: absolute;
+    inset: 0;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    border-radius: 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 20px;
+    overflow: hidden;
+  }
+  .card-face::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 20px;
+    background: radial-gradient(ellipse at 30% 20%, rgba(232,200,122,0.05) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .card-back { transform: rotateY(180deg); }
+
+  .card-badge {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    padding: 3px 8px;
+    border-radius: 6px;
+  }
+  .badge-N5 { background: var(--green-dim); color: var(--n5); border: 1px solid rgba(107,207,143,0.3); }
+  .badge-N4 { background: var(--blue-dim); color: var(--n4); border: 1px solid rgba(122,176,232,0.3); }
+  .badge-N3 { background: var(--accent-dim); color: var(--n3); border: 1px solid rgba(232,200,122,0.3); }
+
+  .card-hint { font-size: 11px; color: var(--text-dim); margin-bottom: 16px; letter-spacing: 0.04em; }
+  .card-jp {
+    font-family: 'Noto Serif JP', serif;
+    font-size: clamp(36px, 10vw, 56px);
+    color: var(--text);
+    margin-bottom: 10px;
+    line-height: 1.2;
+    text-align: center;
+  }
+  .card-kana {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 15px;
+    color: var(--text-muted);
+  }
+  .card-cat {
+    position: absolute;
+    bottom: 14px;
+    left: 14px;
+    font-size: 10px;
+    color: var(--text-dim);
+    letter-spacing: 0.04em;
+  }
+  .card-fr {
+    font-size: clamp(18px, 5vw, 26px);
+    font-weight: 500;
+    color: var(--text);
+    text-align: center;
+    margin-bottom: 8px;
+  }
+  .card-reading {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 14px;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+  }
+  .card-ex {
+    font-size: 12px;
+    color: var(--text-muted);
+    text-align: center;
+    max-width: 90%;
+    line-height: 1.5;
+    font-style: italic;
+  }
+
+  /* Action buttons */
+  .actions {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .btn {
+    flex: 1;
+    padding: 14px 0;
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: all 0.15s;
+    color: var(--text-muted);
+  }
+  .btn:active { transform: scale(0.96); }
+  .btn-wrong { color: var(--red); border-color: rgba(240,117,117,0.2); }
+  .btn-wrong:active { background: var(--red-dim); }
+  .btn-right { color: var(--green); border-color: rgba(107,207,143,0.2); }
+  .btn-right:active { background: var(--green-dim); }
+  .btn-skip { flex: 0.5; }
+
+  /* Bottom row */
+  .bottom-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: calc(12px + var(--safe-bottom));
+  }
+  .card-pos { font-size: 12px; color: var(--text-dim); }
+  .btn-sm {
+    padding: 6px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-muted);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .btn-sm:active { background: var(--surface2); }
+
+  /* Finish overlay */
+  .finish-overlay {
+    display: none;
+    position: absolute;
+    inset: 0;
+    background: var(--surface);
+    border-radius: 20px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 24px;
+  }
+  .finish-overlay.show { display: flex; }
+  .finish-icon { font-size: 36px; margin-bottom: 4px; }
+  .finish-title { font-size: 18px; font-weight: 600; color: var(--text); }
+  .finish-sub { font-size: 13px; color: var(--text-muted); text-align: center; }
+  .finish-scores { display: flex; gap: 16px; margin-top: 8px; }
+  .finish-score { text-align: center; }
+  .finish-score .n { font-size: 24px; font-weight: 600; }
+  .finish-score .l { font-size: 11px; color: var(--text-muted); }
+  .finish-score.g .n { color: var(--green); }
+  .finish-score.r .n { color: var(--red); }
+
+  svg.icon { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="header">
+    <div class="logo">JLPT <span>Cards</span></div>
+    <div class="header-stats">
+      <span>Total <b id="hTotal">335</b></span>
+      <span>✓ <b id="hRight" style="color:var(--green)">0</b></span>
+      <span>✗ <b id="hWrong" style="color:var(--red)">0</b></span>
+    </div>
+  </div>
+
+  <div class="level-tabs">
+    <button class="lvl-btn active" data-lvl="all">Tous</button>
+    <button class="lvl-btn" data-lvl="N5">N5</button>
+    <button class="lvl-btn" data-lvl="N4">N4</button>
+    <button class="lvl-btn" data-lvl="N3">N3</button>
+  </div>
+
+  <div class="cat-row">
+    <select class="cat-select" id="catSelect"><option value="all" selected="selected">Toutes catégories</option><option value="Adjectifs">Adjectifs</option><option value="Animaux">Animaux</option><option value="Corps">Corps</option><option value="Direction">Direction</option><option value="Divers">Divers</option><option value="Expressions">Expressions</option><option value="Famille">Famille</option><option value="Lieux">Lieux</option><option value="Nature">Nature</option><option value="Nombres">Nombres</option><option value="Nourriture">Nourriture</option><option value="Objets">Objets</option><option value="Personnes">Personnes</option><option value="Pronoms">Pronoms</option><option value="Société">Société</option><option value="Temps">Temps</option><option value="Transport">Transport</option><option value="Travail">Travail</option><option value="Verbes">Verbes</option><option value="Vie quotidienne">Vie quotidienne</option><option value="École">École</option></select>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-fill" id="progFill" style="width:0%"></div>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-pill">
+      <span class="num" id="sTotal">335</span>
+      <span class="lbl">Total</span>
+    </div>
+    <div class="stat-pill green">
+      <span class="num" id="sRight">0</span>
+      <span class="lbl">Connus</span>
+    </div>
+    <div class="stat-pill red">
+      <span class="num" id="sWrong">0</span>
+      <span class="lbl">À revoir</span>
+    </div>
+    <div class="stat-pill blue">
+      <span class="num" id="sLeft">335</span>
+      <span class="lbl">Restants</span>
+    </div>
+  </div>
+
+  <div class="card-area">
+    <div class="card-wrap" id="cardWrap" onclick="flipCard()">
+      <div class="card-inner" id="cardInner">
+        <div class="card-face card-front">
+          <div class="card-hint">Appuyer pour révéler</div>
+          <div class="card-jp" id="frontJp">月</div>
+          <div class="card-kana" id="frontKana">つき/がつ</div>
+          <span class="card-badge badge-N5" id="frontBadge">N5</span>
+          <span class="card-cat" id="frontCat">Temps</span>
+          <div class="finish-overlay" id="finishOverlay">
+            <div class="finish-icon">🎌</div>
+            <div class="finish-title">Session terminée !</div>
+            <div class="finish-scores">
+              <div class="finish-score g"><div class="n" id="finRight">0</div><div class="l">Connus</div></div>
+              <div class="finish-score r"><div class="n" id="finWrong">0</div><div class="l">À revoir</div></div>
+            </div>
+            <div class="finish-sub" id="finPct"></div>
+          </div>
+        </div>
+        <div class="card-face card-back">
+          <div class="card-fr" id="backFr">mois, lune</div>
+          <div class="card-reading" id="backReading">つき/がつ · 月</div>
+          <div class="card-ex" id="backEx"></div>
+          <span class="card-badge badge-N5" id="backBadge">N5</span>
+          <span class="card-cat" id="backCat">Temps</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="btn btn-wrong" onclick="answer(false)">
+      <svg class="icon" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      À revoir
+    </button>
+    <button class="btn btn-skip" onclick="nextCard()">
+      <svg class="icon" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline></svg>
+    </button>
+    <button class="btn btn-right" onclick="answer(true)">
+      <svg class="icon" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+      Connu
+    </button>
+  </div>
+
+  <div class="bottom-row">
+    <span class="card-pos" id="cardPos">Carte 1 / 335</span>
+    <div style="display:flex;gap:6px;">
+      <button class="btn-sm" onclick="shuffleDeck()">🔀 Mélanger</button>
+      <button class="btn-sm" onclick="resetSession()">↩ Recommencer</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const VOCAB = [
+  {jp:"私",kana:"わたし",fr:"je, moi",cat:"Pronoms",lvl:"N5"},
+  {jp:"あなた",kana:"あなた",fr:"tu, vous",cat:"Pronoms",lvl:"N5"},
+  {jp:"彼",kana:"かれ",fr:"il, lui, petit ami",cat:"Pronoms",lvl:"N5"},
+  {jp:"彼女",kana:"かのじょ",fr:"elle, petite amie",cat:"Pronoms",lvl:"N5"},
+  {jp:"これ",kana:"これ",fr:"ceci (proche)",cat:"Pronoms",lvl:"N5"},
+  {jp:"それ",kana:"それ",fr:"cela (intermédiaire)",cat:"Pronoms",lvl:"N5"},
+  {jp:"あれ",kana:"あれ",fr:"cela (loin)",cat:"Pronoms",lvl:"N5"},
+  {jp:"誰",kana:"だれ",fr:"qui",cat:"Pronoms",lvl:"N5"},
+  {jp:"何",kana:"なに/なん",fr:"quoi, quel",cat:"Pronoms",lvl:"N5"},
+  {jp:"どこ",kana:"どこ",fr:"où",cat:"Pronoms",lvl:"N5"},
+  {jp:"いつ",kana:"いつ",fr:"quand",cat:"Pronoms",lvl:"N5"},
+  {jp:"どれ",kana:"どれ",fr:"lequel",cat:"Pronoms",lvl:"N5"},
+  {jp:"食べる",kana:"たべる",fr:"manger",cat:"Verbes",lvl:"N5"},
+  {jp:"飲む",kana:"のむ",fr:"boire",cat:"Verbes",lvl:"N5"},
+  {jp:"見る",kana:"みる",fr:"voir, regarder",cat:"Verbes",lvl:"N5"},
+  {jp:"聞く",kana:"きく",fr:"écouter, demander",cat:"Verbes",lvl:"N5"},
+  {jp:"話す",kana:"はなす",fr:"parler",cat:"Verbes",lvl:"N5"},
+  {jp:"読む",kana:"よむ",fr:"lire",cat:"Verbes",lvl:"N5"},
+  {jp:"書く",kana:"かく",fr:"écrire",cat:"Verbes",lvl:"N5"},
+  {jp:"行く",kana:"いく",fr:"aller",cat:"Verbes",lvl:"N5"},
+  {jp:"来る",kana:"くる",fr:"venir",cat:"Verbes",lvl:"N5"},
+  {jp:"帰る",kana:"かえる",fr:"rentrer, retourner",cat:"Verbes",lvl:"N5"},
+  {jp:"買う",kana:"かう",fr:"acheter",cat:"Verbes",lvl:"N5"},
+  {jp:"売る",kana:"うる",fr:"vendre",cat:"Verbes",lvl:"N5"},
+  {jp:"起きる",kana:"おきる",fr:"se lever, se réveiller",cat:"Verbes",lvl:"N5"},
+  {jp:"寝る",kana:"ねる",fr:"dormir, aller au lit",cat:"Verbes",lvl:"N5"},
+  {jp:"する",kana:"する",fr:"faire",cat:"Verbes",lvl:"N5"},
+  {jp:"ある",kana:"ある",fr:"exister (inanimé), avoir",cat:"Verbes",lvl:"N5"},
+  {jp:"いる",kana:"いる",fr:"exister (animé), être",cat:"Verbes",lvl:"N5"},
+  {jp:"わかる",kana:"わかる",fr:"comprendre",cat:"Verbes",lvl:"N5"},
+  {jp:"大きい",kana:"おおきい",fr:"grand, gros",cat:"Adjectifs",lvl:"N5"},
+  {jp:"小さい",kana:"ちいさい",fr:"petit",cat:"Adjectifs",lvl:"N5"},
+  {jp:"高い",kana:"たかい",fr:"haut, cher",cat:"Adjectifs",lvl:"N5"},
+  {jp:"安い",kana:"やすい",fr:"bon marché",cat:"Adjectifs",lvl:"N5"},
+  {jp:"新しい",kana:"あたらしい",fr:"nouveau, neuf",cat:"Adjectifs",lvl:"N5"},
+  {jp:"古い",kana:"ふるい",fr:"vieux, ancien",cat:"Adjectifs",lvl:"N5"},
+  {jp:"いい/良い",kana:"いい/よい",fr:"bon, bien",cat:"Adjectifs",lvl:"N5"},
+  {jp:"悪い",kana:"わるい",fr:"mauvais",cat:"Adjectifs",lvl:"N5"},
+  {jp:"暑い",kana:"あつい",fr:"chaud (temps)",cat:"Adjectifs",lvl:"N5"},
+  {jp:"寒い",kana:"さむい",fr:"froid (temps)",cat:"Adjectifs",lvl:"N5"},
+  {jp:"熱い",kana:"あつい",fr:"chaud (objet/liquide)",cat:"Adjectifs",lvl:"N5"},
+  {jp:"冷たい",kana:"つめたい",fr:"froid (objet/liquide)",cat:"Adjectifs",lvl:"N5"},
+  {jp:"多い",kana:"おおい",fr:"nombreux, beaucoup",cat:"Adjectifs",lvl:"N5"},
+  {jp:"少ない",kana:"すくない",fr:"peu nombreux",cat:"Adjectifs",lvl:"N5"},
+  {jp:"難しい",kana:"むずかしい",fr:"difficile",cat:"Adjectifs",lvl:"N5"},
+  {jp:"易しい",kana:"やさしい",fr:"facile",cat:"Adjectifs",lvl:"N5"},
+  {jp:"楽しい",kana:"たのしい",fr:"amusant, agréable",cat:"Adjectifs",lvl:"N5"},
+  {jp:"好き",kana:"すき",fr:"aimer, aimé",cat:"Adjectifs",lvl:"N5"},
+  {jp:"嫌い",kana:"きらい",fr:"détester",cat:"Adjectifs",lvl:"N5"},
+  {jp:"有名",kana:"ゆうめい",fr:"célèbre, fameux",cat:"Adjectifs",lvl:"N5"},
+  {jp:"一",kana:"いち",fr:"1 (un)",cat:"Nombres",lvl:"N5"},
+  {jp:"二",kana:"に",fr:"2 (deux)",cat:"Nombres",lvl:"N5"},
+  {jp:"三",kana:"さん",fr:"3 (trois)",cat:"Nombres",lvl:"N5"},
+  {jp:"四",kana:"し/よん",fr:"4 (quatre)",cat:"Nombres",lvl:"N5"},
+  {jp:"五",kana:"ご",fr:"5 (cinq)",cat:"Nombres",lvl:"N5"},
+  {jp:"六",kana:"ろく",fr:"6 (six)",cat:"Nombres",lvl:"N5"},
+  {jp:"七",kana:"しち/なな",fr:"7 (sept)",cat:"Nombres",lvl:"N5"},
+  {jp:"八",kana:"はち",fr:"8 (huit)",cat:"Nombres",lvl:"N5"},
+  {jp:"九",kana:"く/きゅう",fr:"9 (neuf)",cat:"Nombres",lvl:"N5"},
+  {jp:"十",kana:"じゅう",fr:"10 (dix)",cat:"Nombres",lvl:"N5"},
+  {jp:"百",kana:"ひゃく",fr:"100 (cent)",cat:"Nombres",lvl:"N5"},
+  {jp:"千",kana:"せん",fr:"1000 (mille)",cat:"Nombres",lvl:"N5"},
+  {jp:"万",kana:"まん",fr:"10 000 (dix mille)",cat:"Nombres",lvl:"N5"},
+  {jp:"日",kana:"にち/ひ",fr:"jour, soleil",cat:"Temps",lvl:"N5"},
+  {jp:"月",kana:"つき/がつ",fr:"mois, lune",cat:"Temps",lvl:"N5"},
+  {jp:"年",kana:"ねん/とし",fr:"année, an",cat:"Temps",lvl:"N5"},
+  {jp:"今日",kana:"きょう",fr:"aujourd'hui",cat:"Temps",lvl:"N5"},
+  {jp:"明日",kana:"あした",fr:"demain",cat:"Temps",lvl:"N5"},
+  {jp:"昨日",kana:"きのう",fr:"hier",cat:"Temps",lvl:"N5"},
+  {jp:"今",kana:"いま",fr:"maintenant",cat:"Temps",lvl:"N5"},
+  {jp:"朝",kana:"あさ",fr:"matin",cat:"Temps",lvl:"N5"},
+  {jp:"昼",kana:"ひる",fr:"midi, après-midi",cat:"Temps",lvl:"N5"},
+  {jp:"夜",kana:"よる",fr:"soir, nuit",cat:"Temps",lvl:"N5"},
+  {jp:"週",kana:"しゅう",fr:"semaine",cat:"Temps",lvl:"N5"},
+  {jp:"父",kana:"ちち",fr:"mon père",cat:"Famille",lvl:"N5"},
+  {jp:"母",kana:"はは",fr:"ma mère",cat:"Famille",lvl:"N5"},
+  {jp:"兄",kana:"あに",fr:"mon grand frère",cat:"Famille",lvl:"N5"},
+  {jp:"姉",kana:"あね",fr:"ma grande sœur",cat:"Famille",lvl:"N5"},
+  {jp:"弟",kana:"おとうと",fr:"mon petit frère",cat:"Famille",lvl:"N5"},
+  {jp:"妹",kana:"いもうと",fr:"ma petite sœur",cat:"Famille",lvl:"N5"},
+  {jp:"子供",kana:"こども",fr:"enfant",cat:"Famille",lvl:"N5"},
+  {jp:"家族",kana:"かぞく",fr:"famille",cat:"Famille",lvl:"N5"},
+  {jp:"友達",kana:"ともだち",fr:"ami(e)",cat:"Famille",lvl:"N5"},
+  {jp:"先生",kana:"せんせい",fr:"professeur, docteur",cat:"Personnes",lvl:"N5"},
+  {jp:"学生",kana:"がくせい",fr:"étudiant(e)",cat:"Personnes",lvl:"N5"},
+  {jp:"人",kana:"ひと/じん",fr:"personne, être humain",cat:"Personnes",lvl:"N5"},
+  {jp:"男",kana:"おとこ",fr:"homme",cat:"Personnes",lvl:"N5"},
+  {jp:"女",kana:"おんな",fr:"femme",cat:"Personnes",lvl:"N5"},
+  {jp:"学校",kana:"がっこう",fr:"école",cat:"Lieux",lvl:"N5"},
+  {jp:"会社",kana:"かいしゃ",fr:"entreprise",cat:"Lieux",lvl:"N5"},
+  {jp:"家",kana:"いえ/うち",fr:"maison, domicile",cat:"Lieux",lvl:"N5"},
+  {jp:"駅",kana:"えき",fr:"gare",cat:"Lieux",lvl:"N5"},
+  {jp:"店",kana:"みせ",fr:"magasin, boutique",cat:"Lieux",lvl:"N5"},
+  {jp:"病院",kana:"びょういん",fr:"hôpital",cat:"Lieux",lvl:"N5"},
+  {jp:"銀行",kana:"ぎんこう",fr:"banque",cat:"Lieux",lvl:"N5"},
+  {jp:"図書館",kana:"としょかん",fr:"bibliothèque",cat:"Lieux",lvl:"N5"},
+  {jp:"公園",kana:"こうえん",fr:"parc",cat:"Lieux",lvl:"N5"},
+  {jp:"日本",kana:"にほん",fr:"Japon",cat:"Lieux",lvl:"N5"},
+  {jp:"水",kana:"みず",fr:"eau",cat:"Nourriture",lvl:"N5"},
+  {jp:"ご飯",kana:"ごはん",fr:"riz cuit, repas",cat:"Nourriture",lvl:"N5"},
+  {jp:"肉",kana:"にく",fr:"viande",cat:"Nourriture",lvl:"N5"},
+  {jp:"魚",kana:"さかな",fr:"poisson",cat:"Nourriture",lvl:"N5"},
+  {jp:"野菜",kana:"やさい",fr:"légumes",cat:"Nourriture",lvl:"N5"},
+  {jp:"果物",kana:"くだもの",fr:"fruits",cat:"Nourriture",lvl:"N5"},
+  {jp:"パン",kana:"ぱん",fr:"pain",cat:"Nourriture",lvl:"N5"},
+  {jp:"お茶",kana:"おちゃ",fr:"thé",cat:"Nourriture",lvl:"N5"},
+  {jp:"牛乳",kana:"ぎゅうにゅう",fr:"lait",cat:"Nourriture",lvl:"N5"},
+  {jp:"電車",kana:"でんしゃ",fr:"train électrique, métro",cat:"Transport",lvl:"N5"},
+  {jp:"バス",kana:"ばす",fr:"bus",cat:"Transport",lvl:"N5"},
+  {jp:"車",kana:"くるま",fr:"voiture",cat:"Transport",lvl:"N5"},
+  {jp:"自転車",kana:"じてんしゃ",fr:"vélo",cat:"Transport",lvl:"N5"},
+  {jp:"飛行機",kana:"ひこうき",fr:"avion",cat:"Transport",lvl:"N5"},
+  {jp:"本",kana:"ほん",fr:"livre",cat:"Objets",lvl:"N5"},
+  {jp:"紙",kana:"かみ",fr:"papier",cat:"Objets",lvl:"N5"},
+  {jp:"鉛筆",kana:"えんぴつ",fr:"crayon",cat:"Objets",lvl:"N5"},
+  {jp:"ペン",kana:"ぺん",fr:"stylo",cat:"Objets",lvl:"N5"},
+  {jp:"電話",kana:"でんわ",fr:"téléphone",cat:"Objets",lvl:"N5"},
+  {jp:"お金",kana:"おかね",fr:"argent",cat:"Objets",lvl:"N5"},
+  {jp:"時計",kana:"とけい",fr:"montre, horloge",cat:"Objets",lvl:"N5"},
+  {jp:"右",kana:"みぎ",fr:"droite",cat:"Direction",lvl:"N5"},
+  {jp:"左",kana:"ひだり",fr:"gauche",cat:"Direction",lvl:"N5"},
+  {jp:"上",kana:"うえ",fr:"haut, dessus",cat:"Direction",lvl:"N5"},
+  {jp:"下",kana:"した",fr:"bas, dessous",cat:"Direction",lvl:"N5"},
+  {jp:"前",kana:"まえ",fr:"devant, avant",cat:"Direction",lvl:"N5"},
+  {jp:"後ろ",kana:"うしろ",fr:"derrière, arrière",cat:"Direction",lvl:"N5"},
+  {jp:"中",kana:"なか",fr:"intérieur, dedans",cat:"Direction",lvl:"N5"},
+  {jp:"外",kana:"そと",fr:"extérieur, dehors",cat:"Direction",lvl:"N5"},
+  {jp:"春",kana:"はる",fr:"printemps",cat:"Nature",lvl:"N5"},
+  {jp:"夏",kana:"なつ",fr:"été",cat:"Nature",lvl:"N5"},
+  {jp:"秋",kana:"あき",fr:"automne",cat:"Nature",lvl:"N5"},
+  {jp:"冬",kana:"ふゆ",fr:"hiver",cat:"Nature",lvl:"N5"},
+  {jp:"雨",kana:"あめ",fr:"pluie",cat:"Nature",lvl:"N5"},
+  {jp:"雪",kana:"ゆき",fr:"neige",cat:"Nature",lvl:"N5"},
+  {jp:"風",kana:"かぜ",fr:"vent",cat:"Nature",lvl:"N5"},
+  {jp:"空",kana:"そら",fr:"ciel",cat:"Nature",lvl:"N5"},
+  {jp:"山",kana:"やま",fr:"montagne",cat:"Nature",lvl:"N5"},
+  {jp:"川",kana:"かわ",fr:"rivière, fleuve",cat:"Nature",lvl:"N5"},
+  {jp:"海",kana:"うみ",fr:"mer, océan",cat:"Nature",lvl:"N5"},
+  {jp:"木",kana:"き",fr:"arbre",cat:"Nature",lvl:"N5"},
+  {jp:"花",kana:"はな",fr:"fleur",cat:"Nature",lvl:"N5"},
+  {jp:"犬",kana:"いぬ",fr:"chien",cat:"Animaux",lvl:"N5"},
+  {jp:"猫",kana:"ねこ",fr:"chat",cat:"Animaux",lvl:"N5"},
+  {jp:"鳥",kana:"とり",fr:"oiseau",cat:"Animaux",lvl:"N5"},
+  {jp:"はい",kana:"はい",fr:"oui",cat:"Expressions",lvl:"N5"},
+  {jp:"いいえ",kana:"いいえ",fr:"non",cat:"Expressions",lvl:"N5"},
+  {jp:"すみません",kana:"すみません",fr:"excusez-moi, pardon",cat:"Expressions",lvl:"N5"},
+  {jp:"ありがとう",kana:"ありがとう",fr:"merci",cat:"Expressions",lvl:"N5"},
+  {jp:"どうぞ",kana:"どうぞ",fr:"s'il vous plaît, voici",cat:"Expressions",lvl:"N5"},
+  {jp:"おはよう",kana:"おはよう",fr:"bonjour (matin)",cat:"Expressions",lvl:"N5"},
+  {jp:"こんにちは",kana:"こんにちは",fr:"bonjour (journée)",cat:"Expressions",lvl:"N5"},
+  {jp:"こんばんは",kana:"こんばんは",fr:"bonsoir",cat:"Expressions",lvl:"N5"},
+  {jp:"さようなら",kana:"さようなら",fr:"au revoir",cat:"Expressions",lvl:"N5"},
+  {jp:"覚える",kana:"おぼえる",fr:"mémoriser, se souvenir",cat:"Verbes",lvl:"N4"},
+  {jp:"忘れる",kana:"わすれる",fr:"oublier",cat:"Verbes",lvl:"N4"},
+  {jp:"始める",kana:"はじめる",fr:"commencer (transitif)",cat:"Verbes",lvl:"N4"},
+  {jp:"終わる",kana:"おわる",fr:"finir, se terminer",cat:"Verbes",lvl:"N4"},
+  {jp:"使う",kana:"つかう",fr:"utiliser",cat:"Verbes",lvl:"N4"},
+  {jp:"貸す",kana:"かす",fr:"prêter",cat:"Verbes",lvl:"N4"},
+  {jp:"借りる",kana:"かりる",fr:"emprunter",cat:"Verbes",lvl:"N4"},
+  {jp:"選ぶ",kana:"えらぶ",fr:"choisir",cat:"Verbes",lvl:"N4"},
+  {jp:"頼む",kana:"たのむ",fr:"demander, commander",cat:"Verbes",lvl:"N4"},
+  {jp:"手伝う",kana:"てつだう",fr:"aider",cat:"Verbes",lvl:"N4"},
+  {jp:"運ぶ",kana:"はこぶ",fr:"transporter, porter",cat:"Verbes",lvl:"N4"},
+  {jp:"送る",kana:"おくる",fr:"envoyer, raccompagner",cat:"Verbes",lvl:"N4"},
+  {jp:"受ける",kana:"うける",fr:"recevoir, passer (examen)",cat:"Verbes",lvl:"N4"},
+  {jp:"教える",kana:"おしえる",fr:"enseigner, expliquer",cat:"Verbes",lvl:"N4"},
+  {jp:"習う",kana:"ならう",fr:"apprendre (de quelqu'un)",cat:"Verbes",lvl:"N4"},
+  {jp:"練習する",kana:"れんしゅうする",fr:"pratiquer, s'entraîner",cat:"Verbes",lvl:"N4"},
+  {jp:"準備する",kana:"じゅんびする",fr:"préparer",cat:"Verbes",lvl:"N4"},
+  {jp:"確認する",kana:"かくにんする",fr:"confirmer, vérifier",cat:"Verbes",lvl:"N4"},
+  {jp:"説明する",kana:"せつめいする",fr:"expliquer",cat:"Verbes",lvl:"N4"},
+  {jp:"変わる",kana:"かわる",fr:"changer (intransitif)",cat:"Verbes",lvl:"N4"},
+  {jp:"増える",kana:"ふえる",fr:"augmenter",cat:"Verbes",lvl:"N4"},
+  {jp:"減る",kana:"へる",fr:"diminuer",cat:"Verbes",lvl:"N4"},
+  {jp:"続ける",kana:"つづける",fr:"continuer",cat:"Verbes",lvl:"N4"},
+  {jp:"止める",kana:"とめる",fr:"arrêter, stopper",cat:"Verbes",lvl:"N4"},
+  {jp:"決める",kana:"きめる",fr:"décider",cat:"Verbes",lvl:"N4"},
+  {jp:"集める",kana:"あつめる",fr:"collecter, rassembler",cat:"Verbes",lvl:"N4"},
+  {jp:"調べる",kana:"しらべる",fr:"chercher, vérifier",cat:"Verbes",lvl:"N4"},
+  {jp:"比べる",kana:"くらべる",fr:"comparer",cat:"Verbes",lvl:"N4"},
+  {jp:"暖かい",kana:"あたたかい",fr:"tiède, chaud (agréable)",cat:"Adjectifs",lvl:"N4"},
+  {jp:"涼しい",kana:"すずしい",fr:"frais",cat:"Adjectifs",lvl:"N4"},
+  {jp:"嬉しい",kana:"うれしい",fr:"content, heureux",cat:"Adjectifs",lvl:"N4"},
+  {jp:"悲しい",kana:"かなしい",fr:"triste",cat:"Adjectifs",lvl:"N4"},
+  {jp:"怖い",kana:"こわい",fr:"effrayant, avoir peur",cat:"Adjectifs",lvl:"N4"},
+  {jp:"痛い",kana:"いたい",fr:"douloureux, avoir mal",cat:"Adjectifs",lvl:"N4"},
+  {jp:"眠い",kana:"ねむい",fr:"avoir sommeil",cat:"Adjectifs",lvl:"N4"},
+  {jp:"忙しい",kana:"いそがしい",fr:"occupé, chargé",cat:"Adjectifs",lvl:"N4"},
+  {jp:"親切",kana:"しんせつ",fr:"gentil, aimable",cat:"Adjectifs",lvl:"N4"},
+  {jp:"丁寧",kana:"ていねい",fr:"poli, soigneux",cat:"Adjectifs",lvl:"N4"},
+  {jp:"大切",kana:"たいせつ",fr:"important, précieux",cat:"Adjectifs",lvl:"N4"},
+  {jp:"必要",kana:"ひつよう",fr:"nécessaire, besoin",cat:"Adjectifs",lvl:"N4"},
+  {jp:"便利",kana:"べんり",fr:"pratique, commode",cat:"Adjectifs",lvl:"N4"},
+  {jp:"不便",kana:"ふべん",fr:"peu pratique",cat:"Adjectifs",lvl:"N4"},
+  {jp:"安全",kana:"あんぜん",fr:"sûr, sécurité",cat:"Adjectifs",lvl:"N4"},
+  {jp:"危険",kana:"きけん",fr:"dangereux, danger",cat:"Adjectifs",lvl:"N4"},
+  {jp:"仕事",kana:"しごと",fr:"travail, emploi",cat:"Travail",lvl:"N4"},
+  {jp:"会議",kana:"かいぎ",fr:"réunion, conférence",cat:"Travail",lvl:"N4"},
+  {jp:"部長",kana:"ぶちょう",fr:"chef de département",cat:"Travail",lvl:"N4"},
+  {jp:"社員",kana:"しゃいん",fr:"employé(e)",cat:"Travail",lvl:"N4"},
+  {jp:"給料",kana:"きゅうりょう",fr:"salaire",cat:"Travail",lvl:"N4"},
+  {jp:"休み",kana:"やすみ",fr:"congé, vacances, repos",cat:"Travail",lvl:"N4"},
+  {jp:"締め切り",kana:"しめきり",fr:"date limite, deadline",cat:"Travail",lvl:"N4"},
+  {jp:"乗り換え",kana:"のりかえ",fr:"correspondance",cat:"Transport",lvl:"N4"},
+  {jp:"片道",kana:"かたみち",fr:"aller simple",cat:"Transport",lvl:"N4"},
+  {jp:"往復",kana:"おうふく",fr:"aller-retour",cat:"Transport",lvl:"N4"},
+  {jp:"出発",kana:"しゅっぱつ",fr:"départ",cat:"Transport",lvl:"N4"},
+  {jp:"到着",kana:"とうちゃく",fr:"arrivée",cat:"Transport",lvl:"N4"},
+  {jp:"予約",kana:"よやく",fr:"réservation",cat:"Transport",lvl:"N4"},
+  {jp:"授業",kana:"じゅぎょう",fr:"cours, leçon",cat:"École",lvl:"N4"},
+  {jp:"試験",kana:"しけん",fr:"examen, test",cat:"École",lvl:"N4"},
+  {jp:"宿題",kana:"しゅくだい",fr:"devoirs",cat:"École",lvl:"N4"},
+  {jp:"辞書",kana:"じしょ",fr:"dictionnaire",cat:"École",lvl:"N4"},
+  {jp:"文法",kana:"ぶんぽう",fr:"grammaire",cat:"École",lvl:"N4"},
+  {jp:"発音",kana:"はつおん",fr:"prononciation",cat:"École",lvl:"N4"},
+  {jp:"単語",kana:"たんご",fr:"mot, vocabulaire",cat:"École",lvl:"N4"},
+  {jp:"成績",kana:"せいせき",fr:"résultats, notes",cat:"École",lvl:"N4"},
+  {jp:"体",kana:"からだ",fr:"corps",cat:"Corps",lvl:"N4"},
+  {jp:"頭",kana:"あたま",fr:"tête",cat:"Corps",lvl:"N4"},
+  {jp:"手",kana:"て",fr:"main",cat:"Corps",lvl:"N4"},
+  {jp:"足",kana:"あし",fr:"pied, jambe",cat:"Corps",lvl:"N4"},
+  {jp:"目",kana:"め",fr:"œil",cat:"Corps",lvl:"N4"},
+  {jp:"口",kana:"くち",fr:"bouche",cat:"Corps",lvl:"N4"},
+  {jp:"耳",kana:"みみ",fr:"oreille",cat:"Corps",lvl:"N4"},
+  {jp:"鼻",kana:"はな",fr:"nez",cat:"Corps",lvl:"N4"},
+  {jp:"病気",kana:"びょうき",fr:"maladie, être malade",cat:"Corps",lvl:"N4"},
+  {jp:"薬",kana:"くすり",fr:"médicament",cat:"Corps",lvl:"N4"},
+  {jp:"引っ越す",kana:"ひっこす",fr:"déménager",cat:"Vie quotidienne",lvl:"N4"},
+  {jp:"掃除する",kana:"そうじする",fr:"nettoyer, faire le ménage",cat:"Vie quotidienne",lvl:"N4"},
+  {jp:"洗濯する",kana:"せんたくする",fr:"faire la lessive",cat:"Vie quotidienne",lvl:"N4"},
+  {jp:"料理する",kana:"りょうりする",fr:"cuisiner",cat:"Vie quotidienne",lvl:"N4"},
+  {jp:"生活",kana:"せいかつ",fr:"vie quotidienne, mode de vie",cat:"Vie quotidienne",lvl:"N4"},
+  {jp:"習慣",kana:"しゅうかん",fr:"habitude, coutume",cat:"Vie quotidienne",lvl:"N4"},
+  {jp:"理由",kana:"りゆう",fr:"raison, motif",cat:"Divers",lvl:"N4"},
+  {jp:"方法",kana:"ほうほう",fr:"méthode, façon",cat:"Divers",lvl:"N4"},
+  {jp:"結果",kana:"けっか",fr:"résultat",cat:"Divers",lvl:"N4"},
+  {jp:"問題",kana:"もんだい",fr:"problème, question",cat:"Divers",lvl:"N4"},
+  {jp:"意味",kana:"いみ",fr:"signification, sens",cat:"Divers",lvl:"N4"},
+  {jp:"例",kana:"れい",fr:"exemple",cat:"Divers",lvl:"N4"},
+  {jp:"場合",kana:"ばあい",fr:"cas, situation",cat:"Divers",lvl:"N4"},
+  {jp:"特に",kana:"とくに",fr:"particulièrement, surtout",cat:"Divers",lvl:"N4"},
+  {jp:"最近",kana:"さいきん",fr:"récemment",cat:"Temps",lvl:"N4"},
+  {jp:"来週",kana:"らいしゅう",fr:"la semaine prochaine",cat:"Temps",lvl:"N4"},
+  {jp:"先週",kana:"せんしゅう",fr:"la semaine dernière",cat:"Temps",lvl:"N4"},
+  {jp:"来月",kana:"らいげつ",fr:"le mois prochain",cat:"Temps",lvl:"N4"},
+  {jp:"先月",kana:"せんげつ",fr:"le mois dernier",cat:"Temps",lvl:"N4"},
+  {jp:"去年",kana:"きょねん",fr:"l'année dernière",cat:"Temps",lvl:"N4"},
+  {jp:"来年",kana:"らいねん",fr:"l'année prochaine",cat:"Temps",lvl:"N4"},
+  {jp:"伝える",kana:"つたえる",fr:"transmettre, communiquer",cat:"Verbes",lvl:"N3"},
+  {jp:"断る",kana:"ことわる",fr:"refuser, décliner",cat:"Verbes",lvl:"N3"},
+  {jp:"迷う",kana:"まよう",fr:"hésiter, se perdre",cat:"Verbes",lvl:"N3"},
+  {jp:"驚く",kana:"おどろく",fr:"être surpris, s'étonner",cat:"Verbes",lvl:"N3"},
+  {jp:"笑う",kana:"わらう",fr:"rire, sourire",cat:"Verbes",lvl:"N3"},
+  {jp:"泣く",kana:"なく",fr:"pleurer",cat:"Verbes",lvl:"N3"},
+  {jp:"怒る",kana:"おこる",fr:"se mettre en colère",cat:"Verbes",lvl:"N3"},
+  {jp:"心配する",kana:"しんぱいする",fr:"s'inquiéter",cat:"Verbes",lvl:"N3"},
+  {jp:"安心する",kana:"あんしんする",fr:"être rassuré",cat:"Verbes",lvl:"N3"},
+  {jp:"満足する",kana:"まんぞくする",fr:"être satisfait",cat:"Verbes",lvl:"N3"},
+  {jp:"失敗する",kana:"しっぱいする",fr:"échouer, rater",cat:"Verbes",lvl:"N3"},
+  {jp:"成功する",kana:"せいこうする",fr:"réussir",cat:"Verbes",lvl:"N3"},
+  {jp:"努力する",kana:"どりょくする",fr:"faire des efforts",cat:"Verbes",lvl:"N3"},
+  {jp:"諦める",kana:"あきらめる",fr:"abandonner, renoncer",cat:"Verbes",lvl:"N3"},
+  {jp:"期待する",kana:"きたいする",fr:"s'attendre à, espérer",cat:"Verbes",lvl:"N3"},
+  {jp:"考える",kana:"かんがえる",fr:"penser, réfléchir",cat:"Verbes",lvl:"N3"},
+  {jp:"判断する",kana:"はんだんする",fr:"juger, décider",cat:"Verbes",lvl:"N3"},
+  {jp:"相談する",kana:"そうだんする",fr:"consulter, discuter",cat:"Verbes",lvl:"N3"},
+  {jp:"連絡する",kana:"れんらくする",fr:"contacter",cat:"Verbes",lvl:"N3"},
+  {jp:"参加する",kana:"さんかする",fr:"participer",cat:"Verbes",lvl:"N3"},
+  {jp:"反対する",kana:"はんたいする",fr:"s'opposer, être contre",cat:"Verbes",lvl:"N3"},
+  {jp:"賛成する",kana:"さんせいする",fr:"être d'accord",cat:"Verbes",lvl:"N3"},
+  {jp:"主張する",kana:"しゅちょうする",fr:"affirmer, insister",cat:"Verbes",lvl:"N3"},
+  {jp:"認める",kana:"みとめる",fr:"reconnaître, admettre",cat:"Verbes",lvl:"N3"},
+  {jp:"違う",kana:"ちがう",fr:"être différent, se tromper",cat:"Verbes",lvl:"N3"},
+  {jp:"似る",kana:"にる",fr:"ressembler",cat:"Verbes",lvl:"N3"},
+  {jp:"当たる",kana:"あたる",fr:"toucher, tomber juste",cat:"Verbes",lvl:"N3"},
+  {jp:"表す",kana:"あらわす",fr:"exprimer, représenter",cat:"Verbes",lvl:"N3"},
+  {jp:"示す",kana:"しめす",fr:"montrer, indiquer",cat:"Verbes",lvl:"N3"},
+  {jp:"育てる",kana:"そだてる",fr:"élever, éduquer",cat:"Verbes",lvl:"N3"},
+  {jp:"立派",kana:"りっぱ",fr:"magnifique, impressionnant",cat:"Adjectifs",lvl:"N3"},
+  {jp:"素晴らしい",kana:"すばらしい",fr:"merveilleux, fantastique",cat:"Adjectifs",lvl:"N3"},
+  {jp:"素敵",kana:"すてき",fr:"charmant, superbe",cat:"Adjectifs",lvl:"N3"},
+  {jp:"おかしい",kana:"おかしい",fr:"bizarre, drôle, suspect",cat:"Adjectifs",lvl:"N3"},
+  {jp:"複雑",kana:"ふくざつ",fr:"complexe, compliqué",cat:"Adjectifs",lvl:"N3"},
+  {jp:"単純",kana:"たんじゅん",fr:"simple, naïf",cat:"Adjectifs",lvl:"N3"},
+  {jp:"積極的",kana:"せっきょくてき",fr:"actif, proactif",cat:"Adjectifs",lvl:"N3"},
+  {jp:"消極的",kana:"しょうきょくてき",fr:"passif, peu enthousiaste",cat:"Adjectifs",lvl:"N3"},
+  {jp:"具体的",kana:"ぐたいてき",fr:"concret, spécifique",cat:"Adjectifs",lvl:"N3"},
+  {jp:"抽象的",kana:"ちゅうしょうてき",fr:"abstrait",cat:"Adjectifs",lvl:"N3"},
+  {jp:"自由",kana:"じゆう",fr:"liberté, libre",cat:"Adjectifs",lvl:"N3"},
+  {jp:"幸せ",kana:"しあわせ",fr:"bonheur, heureux",cat:"Adjectifs",lvl:"N3"},
+  {jp:"不安",kana:"ふあん",fr:"anxiété, inquiet",cat:"Adjectifs",lvl:"N3"},
+  {jp:"残念",kana:"ざんねん",fr:"dommage, désolé",cat:"Adjectifs",lvl:"N3"},
+  {jp:"経済",kana:"けいざい",fr:"économie",cat:"Société",lvl:"N3"},
+  {jp:"政治",kana:"せいじ",fr:"politique",cat:"Société",lvl:"N3"},
+  {jp:"社会",kana:"しゃかい",fr:"société",cat:"Société",lvl:"N3"},
+  {jp:"文化",kana:"ぶんか",fr:"culture",cat:"Société",lvl:"N3"},
+  {jp:"環境",kana:"かんきょう",fr:"environnement",cat:"Société",lvl:"N3"},
+  {jp:"技術",kana:"ぎじゅつ",fr:"technique, technologie",cat:"Société",lvl:"N3"},
+  {jp:"科学",kana:"かがく",fr:"science",cat:"Société",lvl:"N3"},
+  {jp:"情報",kana:"じょうほう",fr:"information, données",cat:"Société",lvl:"N3"},
+  {jp:"教育",kana:"きょういく",fr:"éducation",cat:"Société",lvl:"N3"},
+  {jp:"医療",kana:"いりょう",fr:"soins médicaux",cat:"Société",lvl:"N3"},
+  {jp:"法律",kana:"ほうりつ",fr:"loi, législation",cat:"Société",lvl:"N3"},
+  {jp:"国際",kana:"こくさい",fr:"international",cat:"Société",lvl:"N3"},
+  {jp:"平和",kana:"へいわ",fr:"paix",cat:"Société",lvl:"N3"},
+  {jp:"戦争",kana:"せんそう",fr:"guerre",cat:"Société",lvl:"N3"},
+  {jp:"機会",kana:"きかい",fr:"opportunité, occasion",cat:"Divers",lvl:"N3"},
+  {jp:"可能性",kana:"かのうせい",fr:"possibilité, potentiel",cat:"Divers",lvl:"N3"},
+  {jp:"影響",kana:"えいきょう",fr:"influence, impact",cat:"Divers",lvl:"N3"},
+  {jp:"原因",kana:"げんいん",fr:"cause, origine",cat:"Divers",lvl:"N3"},
+  {jp:"目的",kana:"もくてき",fr:"objectif, but",cat:"Divers",lvl:"N3"},
+  {jp:"計画",kana:"けいかく",fr:"plan, projet",cat:"Divers",lvl:"N3"},
+  {jp:"経験",kana:"けいけん",fr:"expérience",cat:"Divers",lvl:"N3"},
+  {jp:"能力",kana:"のうりょく",fr:"capacité, compétence",cat:"Divers",lvl:"N3"},
+  {jp:"役割",kana:"やくわり",fr:"rôle",cat:"Divers",lvl:"N3"},
+  {jp:"立場",kana:"たちば",fr:"position, point de vue",cat:"Divers",lvl:"N3"},
+  {jp:"関係",kana:"かんけい",fr:"relation, lien, rapport",cat:"Divers",lvl:"N3"},
+  {jp:"責任",kana:"せきにん",fr:"responsabilité",cat:"Divers",lvl:"N3"},
+  {jp:"義務",kana:"ぎむ",fr:"obligation, devoir",cat:"Divers",lvl:"N3"},
+  {jp:"権利",kana:"けんり",fr:"droit, privilège",cat:"Divers",lvl:"N3"},
+  {jp:"記録",kana:"きろく",fr:"enregistrement, record",cat:"Divers",lvl:"N3"},
+  {jp:"報告",kana:"ほうこく",fr:"rapport, compte-rendu",cat:"Divers",lvl:"N3"},
+  {jp:"提案",kana:"ていあん",fr:"proposition, suggestion",cat:"Divers",lvl:"N3"},
+  {jp:"一方",kana:"いっぽう",fr:"d'un côté, par ailleurs",cat:"Divers",lvl:"N3"},
+  {jp:"したがって",kana:"したがって",fr:"donc, par conséquent",cat:"Divers",lvl:"N3"},
+  {jp:"ところが",kana:"ところが",fr:"cependant, or (adversatif)",cat:"Divers",lvl:"N3"},
+  {jp:"つまり",kana:"つまり",fr:"c'est-à-dire, autrement dit",cat:"Divers",lvl:"N3"},
+  {jp:"むしろ",kana:"むしろ",fr:"plutôt, de préférence",cat:"Divers",lvl:"N3"},
+  {jp:"次第に",kana:"しだいに",fr:"progressivement, peu à peu",cat:"Divers",lvl:"N3"},
+  {jp:"ますます",kana:"ますます",fr:"de plus en plus",cat:"Divers",lvl:"N3"},
+  {jp:"なかなか",kana:"なかなか",fr:"assez bien / difficilement (nég.)",cat:"Divers",lvl:"N3"},
+  {jp:"当然",kana:"とうぜん",fr:"bien sûr, naturellement",cat:"Divers",lvl:"N3"},
+  {jp:"確かに",kana:"たしかに",fr:"certainement, il est vrai que",cat:"Divers",lvl:"N3"},
+  {jp:"実は",kana:"じつは",fr:"en fait, à vrai dire",cat:"Divers",lvl:"N3"},
+  {jp:"特別",kana:"とくべつ",fr:"spécial, particulier",cat:"Divers",lvl:"N3"},
+];
+
+let currentLvl = "all", currentCat = "all";
+let deck = [], idx = 0, right = 0, wrong = 0, flipped = false, done = false;
+
+function getCategories() {
+  const base = currentLvl === "all" ? VOCAB : VOCAB.filter(v => v.lvl === currentLvl);
+  return [...new Set(base.map(v => v.cat))].sort();
+}
+
+function buildDeck() {
+  let base = currentLvl === "all" ? VOCAB : VOCAB.filter(v => v.lvl === currentLvl);
+  if (currentCat !== "all") base = base.filter(v => v.cat === currentCat);
+  deck = [...base].sort(() => Math.random() - 0.5);
+  idx = 0; right = 0; wrong = 0; flipped = false; done = false;
+  document.getElementById("cardInner").classList.remove("flipped");
+  document.getElementById("finishOverlay").classList.remove("show");
+  updateStats(); showCard();
+}
+
+function updateCatSelect() {
+  const sel = document.getElementById("catSelect");
+  const cats = getCategories();
+  sel.innerHTML = '<option value="all">Toutes catégories</option>';
+  cats.forEach(c => {
+    const o = document.createElement("option");
+    o.value = c; o.textContent = c; sel.appendChild(o);
+  });
+  sel.value = "all"; currentCat = "all";
+}
+
+function showCard() {
+  if (!deck.length) return;
+  const w = deck[idx];
+  document.getElementById("frontJp").textContent = w.jp;
+  document.getElementById("frontKana").textContent = w.kana;
+  document.getElementById("frontCat").textContent = w.cat;
+  const fb = document.getElementById("frontBadge");
+  fb.textContent = w.lvl; fb.className = "card-badge badge-" + w.lvl;
+  document.getElementById("backFr").textContent = w.fr;
+  document.getElementById("backReading").textContent = w.kana + " · " + w.jp;
+  document.getElementById("backEx").textContent = w.ex || "";
+  document.getElementById("backCat").textContent = w.cat;
+  const bb = document.getElementById("backBadge");
+  bb.textContent = w.lvl; bb.className = "card-badge badge-" + w.lvl;
+  document.getElementById("cardPos").textContent = "Carte " + (idx+1) + " / " + deck.length;
+  const pct = deck.length > 1 ? Math.round(idx / (deck.length - 1) * 100) : 0;
+  document.getElementById("progFill").style.width = pct + "%";
+}
+
+function flipCard() {
+  if (done) return;
+  flipped = !flipped;
+  document.getElementById("cardInner").classList.toggle("flipped", flipped);
+}
+
+function answer(correct) {
+  if (done) return;
+  if (!flipped) { flipCard(); return; }
+  if (correct) right++; else wrong++;
+  updateStats();
+  if (idx < deck.length - 1) {
+    idx++;
+    flipped = false;
+    document.getElementById("cardInner").classList.remove("flipped");
+    showCard();
+  } else {
+    showFinished();
+  }
+}
+
+function nextCard() {
+  if (done || !deck.length) return;
+  if (idx < deck.length - 1) {
+    idx++;
+    flipped = false;
+    document.getElementById("cardInner").classList.remove("flipped");
+    showCard();
+  } else { showFinished(); }
+}
+
+function showFinished() {
+  done = true;
+  document.getElementById("progFill").style.width = "100%";
+  document.getElementById("finRight").textContent = right;
+  document.getElementById("finWrong").textContent = wrong;
+  const pct = deck.length > 0 ? Math.round(right / deck.length * 100) : 0;
+  document.getElementById("finPct").textContent = pct + "% de réussite — " + (pct >= 80 ? "Excellent ! 🎉" : pct >= 50 ? "Continuez ! 💪" : "Encore un effort ! 📚");
+  document.getElementById("finishOverlay").classList.add("show");
+}
+
+function updateStats() {
+  const left = Math.max(0, deck.length - idx - (done ? 1 : 0));
+  document.getElementById("sTotal").textContent = deck.length;
+  document.getElementById("sRight").textContent = right;
+  document.getElementById("sWrong").textContent = wrong;
+  document.getElementById("sLeft").textContent = left;
+  document.getElementById("hTotal").textContent = deck.length;
+  document.getElementById("hRight").textContent = right;
+  document.getElementById("hWrong").textContent = wrong;
+}
+
+function shuffleDeck() { buildDeck(); }
+function resetSession() { buildDeck(); }
+
+document.querySelectorAll(".lvl-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".lvl-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    currentLvl = btn.dataset.lvl;
+    updateCatSelect();
+    buildDeck();
+  });
+});
+
+document.getElementById("catSelect").addEventListener("change", e => {
+  currentCat = e.target.value;
+  buildDeck();
+});
+
+let touchStartX = 0, touchStartY = 0;
+document.getElementById("cardWrap").addEventListener("touchstart", e => {
+  touchStartX = e.touches[0].clientX;
+  touchStartY = e.touches[0].clientY;
+}, {passive: true});
+document.getElementById("cardWrap").addEventListener("touchend", e => {
+  const dx = e.changedTouches[0].clientX - touchStartX;
+  const dy = e.changedTouches[0].clientY - touchStartY;
+  if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 40) {
+    if (dx > 0) answer(true); else answer(false);
+  } else if (Math.abs(dx) < 10 && Math.abs(dy) < 10) {
+    flipCard();
+  }
+}, {passive: true});
+
+updateCatSelect();
+buildDeck();
+</script>
+
+
+</body></html>
